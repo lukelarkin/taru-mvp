@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
   Dimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -12,11 +11,11 @@ import { BreathingCircle } from '@/components/breathing-circle';
 import { NeonButton } from '@/components/neon-button';
 import { TaruColors, ArchetypeColors } from '@/constants/theme';
 import {
-  SURRENDER_EMOTIONAL_STATES,
-  INTERVENTIONS,
+  QUADRANT_INTERVENTIONS,
   type Archetype,
-  type SurrenderEmotionalState,
 } from '@/constants/archetypes';
+import { EmotionGrid } from '@/components/emotion-grid';
+import type { SurrenderQuadrant } from '@/constants/surrender-states';
 import { useTaruStore } from '@/store/taru-store';
 
 const { height } = Dimensions.get('window');
@@ -27,7 +26,8 @@ export default function SurrenderScreen() {
   const logSurrender = useTaruStore((s) => s.logSurrender);
 
   const [phase, setPhase] = useState<1 | 2 | 3>(1);
-  const [selectedEmotion, setSelectedEmotion] = useState<SurrenderEmotionalState | null>(null);
+  const [selectedEmotion, setSelectedEmotion] = useState<string | null>(null);
+  const [selectedQuadrant, setSelectedQuadrant] = useState<SurrenderQuadrant | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const accentColor = archetype ? ArchetypeColors[archetype] : TaruColors.electricBlue;
@@ -46,7 +46,10 @@ export default function SurrenderScreen() {
   useEffect(() => {
     if (phase === 2) {
       timerRef.current = setTimeout(() => {
-        if (!selectedEmotion) setSelectedEmotion('Stress');
+        if (!selectedEmotion) {
+          setSelectedEmotion('Lonely');
+          setSelectedQuadrant('LOW_UNPLEASANT');
+        }
         setPhase(3);
       }, 15000);
     }
@@ -55,24 +58,24 @@ export default function SurrenderScreen() {
     };
   }, [phase]);
 
-  const handleEmotionSelect = (emotion: SurrenderEmotionalState) => {
+  const handleEmotionSelect = (quadrant: SurrenderQuadrant, emotion: string) => {
     if (timerRef.current) clearTimeout(timerRef.current);
+    setSelectedQuadrant(quadrant);
     setSelectedEmotion(emotion);
     setPhase(3);
   };
 
   const handleDismiss = () => {
-    const emotion = selectedEmotion ?? 'Stress';
-    logSurrender(emotion);
+    const emotion = selectedEmotion ?? 'Lonely';
+    const quadrant = selectedQuadrant ?? 'LOW_UNPLEASANT';
+    logSurrender(emotion, quadrant);
     router.back();
   };
 
   const interventionText =
-    archetype && selectedEmotion
-      ? INTERVENTIONS[archetype][selectedEmotion]
-      : archetype
-        ? INTERVENTIONS[archetype]['Stress']
-        : 'Take three slow breaths. You are already doing the hard thing.';
+    archetype && selectedQuadrant
+      ? QUADRANT_INTERVENTIONS[archetype][selectedQuadrant]
+      : 'Take three slow breaths. You are already doing the hard thing.';
 
   return (
     <SafeAreaView style={styles.container}>
@@ -85,29 +88,9 @@ export default function SurrenderScreen() {
         </View>
       )}
 
-      {/* Phase 2: Name It */}
+      {/* Phase 2: Emotion Grid */}
       {phase === 2 && (
-        <View style={styles.phaseContainer}>
-          <Text style={styles.phaseHeading}>What's underneath this?</Text>
-          <View style={styles.emotionGrid}>
-            {SURRENDER_EMOTIONAL_STATES.map((emotion) => (
-              <TouchableOpacity
-                key={emotion}
-                style={[
-                  styles.emotionChip,
-                  selectedEmotion === emotion && {
-                    borderColor: accentColor,
-                    backgroundColor: TaruColors.surface,
-                  },
-                ]}
-                onPress={() => handleEmotionSelect(emotion)}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.emotionText}>{emotion}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
+        <EmotionGrid onSelect={handleEmotionSelect} />
       )}
 
       {/* Phase 3: Reset */}
@@ -156,40 +139,11 @@ const styles = StyleSheet.create({
     lineHeight: 60,
     letterSpacing: 2,
   },
-  phaseHeading: {
-    fontSize: 32,
-    fontWeight: '800',
-    color: TaruColors.textPrimary,
-    textAlign: 'center',
-    lineHeight: 40,
-  },
   subText: {
     fontSize: 13,
     color: TaruColors.textMuted,
     letterSpacing: 1.5,
     textTransform: 'uppercase',
-  },
-  emotionGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 16,
-    justifyContent: 'center',
-    width: '100%',
-  },
-  emotionChip: {
-    paddingHorizontal: 28,
-    paddingVertical: 18,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: TaruColors.border,
-    backgroundColor: TaruColors.surfaceAlt,
-    minWidth: '44%',
-    alignItems: 'center',
-  },
-  emotionText: {
-    fontSize: 18,
-    color: TaruColors.textPrimary,
-    fontWeight: '600',
   },
   interventionBlock: {
     gap: 20,
