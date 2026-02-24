@@ -2,10 +2,12 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { Archetype } from '@/constants/archetypes';
+import type { SurrenderQuadrant } from '@/constants/surrender-states';
 
 export interface SurrenderEntry {
   timestamp: number;
   emotionalState: string;
+  quadrant?: SurrenderQuadrant;
   archetypeAtTime: string;
 }
 
@@ -25,7 +27,7 @@ interface TaruState {
   setHasHydrated: (value: boolean) => void;
   setArchetype: (a: Archetype) => void;
   completeOnboarding: () => void;
-  logSurrender: (emotionalState: string) => void;
+  logSurrender: (emotionalState: string, quadrant?: SurrenderQuadrant) => void;
   logRelapse: (
     emotionalState: string,
     patternNotes: string[],
@@ -48,13 +50,14 @@ export const useTaruStore = create<TaruState>()(
 
       completeOnboarding: () => set({ onboardingComplete: true }),
 
-      logSurrender: (emotionalState) =>
+      logSurrender: (emotionalState, quadrant) =>
         set((state) => ({
           surrenders: [
             ...state.surrenders,
             {
               timestamp: Date.now(),
               emotionalState,
+              quadrant,
               archetypeAtTime: state.archetype ?? 'unknown',
             },
           ],
