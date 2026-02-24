@@ -2,6 +2,7 @@ import { ScrollView, View, Text, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { TaruColors, ArchetypeColors } from '@/constants/theme';
 import { useTaruStore, selectSelfTrustScore, type SurrenderEntry, type RelapseEntry } from '@/store/taru-store';
+import { QUADRANT_ACCENT } from '@/constants/surrender-states';
 
 function formatDate(timestamp: number): string {
   const d = new Date(timestamp);
@@ -124,7 +125,11 @@ export default function CollapseMapScreen() {
             <Text style={styles.sectionLabel}>Timeline</Text>
             {timeline.map((entry, i) => {
               const isSurrender = entry.type === 'surrender';
-              const dotColor = isSurrender ? TaruColors.neonGreen : TaruColors.hotPink;
+              const dotColor = isSurrender
+                ? (entry.type === 'surrender' && entry.quadrant
+                    ? QUADRANT_ACCENT[entry.quadrant]
+                    : TaruColors.neonGreen)
+                : TaruColors.hotPink;
               return (
                 <View key={i} style={styles.timelineRow}>
                   <View style={styles.timelineLine}>
@@ -139,6 +144,11 @@ export default function CollapseMapScreen() {
                       <Text style={styles.entryDate}>{formatDate(entry.timestamp)}</Text>
                     </View>
                     <Text style={styles.entryEmotion}>{entry.emotionalState}</Text>
+                    {entry.type === 'surrender' && entry.quadrant && (
+                      <Text style={[styles.quadrantLabel, { color: QUADRANT_ACCENT[entry.quadrant] }]}>
+                        {entry.quadrant.replace('_', ' ').toLowerCase()}
+                      </Text>
+                    )}
                     {entry.type === 'relapse' && entry.honestSentence ? (
                       <Text style={styles.entrySentence}>"{entry.honestSentence}"</Text>
                     ) : null}
@@ -302,5 +312,11 @@ const styles = StyleSheet.create({
   noteChipText: {
     fontSize: 12,
     color: TaruColors.textSecondary,
+  },
+  quadrantLabel: {
+    fontSize: 11,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    opacity: 0.7,
   },
 });
