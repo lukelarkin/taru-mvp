@@ -1,3 +1,5 @@
+import type { SurrenderQuadrant } from '@/constants/surrender-states';
+
 export type Archetype = 'Warrior' | 'Lover' | 'Sage' | 'Seeker';
 
 export const ARCHETYPE_DESCRIPTIONS: Record<Archetype, string> = {
@@ -113,3 +115,35 @@ export const PATTERN_CAPTURE_CATEGORIES: Array<{
     options: ['Stressed', 'Lonely', 'Bored', 'In pain'],
   },
 ];
+
+/**
+ * Intervention text keyed by archetype × quadrant.
+ * These replace the old 4-state map when quadrant data is available.
+ * Each string is shown in Phase 3 of the Surrender Wedge.
+ */
+export const QUADRANT_INTERVENTIONS: Record<Archetype, Record<SurrenderQuadrant, string>> = {
+  Warrior: {
+    HIGH_UNPLEASANT: 'Channel the energy. Drop and do 10 right now. Move the charge through your body.',
+    HIGH_PLEASANT:   'Good energy. Use it on something real. Name one thing you will build today.',
+    LOW_UNPLEASANT:  'Warriors do not fight alone. Text one person right now. Just "thinking of you."',
+    LOW_PLEASANT:    'Boredom is a lie your mind tells when it wants an easy win. Find one thing worth fighting for.',
+  },
+  Lover: {
+    HIGH_UNPLEASANT: 'Your body is speaking. Place both hands on your chest. Breathe into them. What does it need?',
+    HIGH_PLEASANT:   'That energy wants real connection, not a screen. Who can you reach out to right now?',
+    LOW_UNPLEASANT:  'You are not alone in this. Put your hand on your chest. Feel your own heartbeat.',
+    LOW_PLEASANT:    'Flatness is distance from yourself. What would it feel like to be close to someone right now?',
+  },
+  Sage: {
+    HIGH_UNPLEASANT: 'Pause. What is actually true right now — not the story your mind is telling, the facts?',
+    HIGH_PLEASANT:   'You can see this clearly. What is this excitement actually seeking underneath it?',
+    LOW_UNPLEASANT:  'Observe this without judgment. Name what you feel. It is temporary data, not your identity.',
+    LOW_PLEASANT:    'The mind is hunting for stimulation it can control. Name 3 things you can see right now.',
+  },
+  Seeker: {
+    HIGH_UNPLEASANT: 'What is this restlessness trying to build in you? Sit with that question for 60 seconds.',
+    HIGH_PLEASANT:   'That wanting is real. What are you actually seeking underneath it? Go one layer deeper.',
+    LOW_UNPLEASANT:  'The hollow feeling has a message. Stay with it long enough to hear it.',
+    LOW_PLEASANT:    'What unexplored part of yourself have you been avoiding? Stay there for one minute.',
+  },
+};
