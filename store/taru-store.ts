@@ -18,11 +18,19 @@ export interface RelapseEntry {
   honestSentence: string;
 }
 
+export interface AccountabilityContact {
+  name: string;
+  phone: string;
+  message: string;
+}
+
 interface TaruState {
   archetype: Archetype | null;
   onboardingComplete: boolean;
   surrenders: SurrenderEntry[];
   relapses: RelapseEntry[];
+  groundingPhotos: string[];
+  accountabilityContact: AccountabilityContact | null;
   _hasHydrated: boolean;
   setHasHydrated: (value: boolean) => void;
   setArchetype: (a: Archetype) => void;
@@ -33,6 +41,8 @@ interface TaruState {
     patternNotes: string[],
     honestSentence: string
   ) => void;
+  setGroundingPhotos: (uris: string[]) => void;
+  setAccountabilityContact: (contact: AccountabilityContact | null) => void;
 }
 
 export const useTaruStore = create<TaruState>()(
@@ -42,6 +52,8 @@ export const useTaruStore = create<TaruState>()(
       onboardingComplete: false,
       surrenders: [],
       relapses: [],
+      groundingPhotos: [],
+      accountabilityContact: null,
       _hasHydrated: false,
 
       setHasHydrated: (value) => set({ _hasHydrated: value }),
@@ -75,6 +87,11 @@ export const useTaruStore = create<TaruState>()(
             },
           ],
         })),
+
+      setGroundingPhotos: (uris) => set({ groundingPhotos: uris }),
+
+      setAccountabilityContact: (contact) =>
+        set({ accountabilityContact: contact }),
     }),
     {
       name: 'taru-storage',
@@ -84,6 +101,8 @@ export const useTaruStore = create<TaruState>()(
         onboardingComplete: state.onboardingComplete,
         surrenders: state.surrenders,
         relapses: state.relapses,
+        groundingPhotos: state.groundingPhotos,
+        accountabilityContact: state.accountabilityContact,
       }),
       onRehydrateStorage: () => (state) => {
         state?.setHasHydrated(true);

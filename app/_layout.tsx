@@ -23,6 +23,10 @@ export default function RootLayout() {
           name="containment"
           options={{ headerShown: false, presentation: 'fullScreenModal' }}
         />
+        <Stack.Screen
+          name="crisis"
+          options={{ headerShown: false, presentation: 'fullScreenModal' }}
+        />
       </Stack>
       <StatusBar style="light" />
     </ThemeProvider>

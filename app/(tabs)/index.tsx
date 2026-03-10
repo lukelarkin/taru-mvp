@@ -52,7 +52,7 @@ export default function HomeScreen() {
           <NeonButton
             label="I'm Struggling"
             color={accentColor}
-            onPress={() => router.push('/surrender')}
+            onPress={() => router.push('/crisis')}
             style={styles.primaryCta}
             textStyle={styles.primaryCtaText}
           />
