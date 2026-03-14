@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, Pressable, Linking, Alert } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Linking, Alert, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
@@ -16,15 +16,16 @@ export default function ReachScreen() {
 
   const sendMessage = async () => {
     if (!contact) return;
-    const url = `sms:${contact.phone}&body=${encodeURIComponent(contact.message)}`;
-    const canOpen = await Linking.canOpenURL(url);
-    if (!canOpen) {
+    // iOS uses & separator, Android uses ? separator for SMS URIs
+    const separator = Platform.OS === 'ios' ? '&' : '?';
+    const url = `sms:${contact.phone}${separator}body=${encodeURIComponent(contact.message)}`;
+    try {
+      await Linking.openURL(url);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setSent(true);
+    } catch {
       Alert.alert('Cannot send SMS', 'Check that Messages is available on this device.');
-      return;
     }
-    await Linking.openURL(url);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    setSent(true);
   };
 
   // No contact set up

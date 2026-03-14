@@ -9,7 +9,13 @@
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.taru.app",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "Choose photos of people you love for grounding during difficult moments",
+        "NSCameraUsageDescription": "Take photos for your personal grounding collection"
+      }
     },
     "android": {
       "adaptiveIcon": {

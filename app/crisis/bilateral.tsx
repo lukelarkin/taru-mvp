@@ -6,8 +6,11 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
+  withRepeat,
+  withSequence,
   Easing,
 } from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
 import { TaruColors, ArchetypeColors } from '@/constants/theme';
 import { useTaruStore } from '@/store/taru-store';
 import { startBilateral, stopBilateral } from '@/services/haptics';
@@ -24,16 +27,25 @@ export default function BilateralScreen() {
 
   const [done, setDone] = useState(false);
 
-  // Reanimated shared values for left circle
+  // Circle shared values
   const leftOpacity = useSharedValue(1);
   const leftScale = useSharedValue(1.12);
-
-  // Reanimated shared values for right circle
   const rightOpacity = useSharedValue(0.18);
   const rightScale = useSharedValue(1.0);
 
-  // Progress bar (0 → full width over 60s)
+  // Energy arc connecting the two circles
+  const arcOpacity = useSharedValue(0.15);
+  const arcGlow = useSharedValue(0);
+
+  // Instruction text breathing
+  const textOpacity = useSharedValue(0.85);
+
+  // Progress bar
   const progressWidth = useSharedValue(0);
+  const progressGlow = useSharedValue(0.3);
+
+  // Fade in
+  const contentOpacity = useSharedValue(0);
 
   const handleBeat = useCallback(
     (side: 'left' | 'right') => {
@@ -43,27 +55,60 @@ export default function BilateralScreen() {
         leftScale.value = withTiming(1.12, T);
         rightOpacity.value = withTiming(0.18, T);
         rightScale.value = withTiming(1.0, T);
+        // Arc glows when energy "moves"
+        arcGlow.value = withSequence(
+          withTiming(0.6, { duration: 80 }),
+          withTiming(0.15, { duration: 220 }),
+        );
       } else {
         leftOpacity.value = withTiming(0.18, T);
         leftScale.value = withTiming(1.0, T);
         rightOpacity.value = withTiming(1, T);
         rightScale.value = withTiming(1.12, T);
+        arcGlow.value = withSequence(
+          withTiming(0.6, { duration: 80 }),
+          withTiming(0.15, { duration: 220 }),
+        );
       }
     },
-    // shared values are stable refs — empty deps is intentional
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   );
 
   const handleComplete = useCallback(() => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     setDone(true);
   }, []);
 
   useEffect(() => {
+    // Fade in
+    contentOpacity.value = withTiming(1, { duration: 600 });
+
+    // Progress bar
     progressWidth.value = withTiming(width - PROGRESS_INSET * 2, {
       duration: 60000,
       easing: Easing.linear,
     });
+
+    // Progress bar glow
+    progressGlow.value = withRepeat(
+      withSequence(
+        withTiming(0.8, { duration: 1500, easing: Easing.inOut(Easing.sin) }),
+        withTiming(0.3, { duration: 1500, easing: Easing.inOut(Easing.sin) }),
+      ),
+      -1,
+      true,
+    );
+
+    // Text breathing
+    textOpacity.value = withRepeat(
+      withSequence(
+        withTiming(0.5, { duration: 2500, easing: Easing.inOut(Easing.sin) }),
+        withTiming(0.85, { duration: 2500, easing: Easing.inOut(Easing.sin) }),
+      ),
+      -1,
+      true,
+    );
+
     startBilateral(handleBeat, handleComplete);
     return () => stopBilateral();
   }, []);
@@ -78,8 +123,24 @@ export default function BilateralScreen() {
     transform: [{ scale: rightScale.value }],
   }));
 
+  const arcStyle = useAnimatedStyle(() => ({
+    opacity: arcGlow.value,
+  }));
+
+  const textBreathStyle = useAnimatedStyle(() => ({
+    opacity: textOpacity.value,
+  }));
+
   const progressStyle = useAnimatedStyle(() => ({
     width: progressWidth.value,
+  }));
+
+  const progressGlowStyle = useAnimatedStyle(() => ({
+    shadowOpacity: progressGlow.value,
+  }));
+
+  const fadeStyle = useAnimatedStyle(() => ({
+    opacity: contentOpacity.value,
   }));
 
   if (done) {
@@ -89,7 +150,10 @@ export default function BilateralScreen() {
           <Text style={styles.doneTitle}>Done.</Text>
           <Text style={styles.doneSubtitle}>The urge passed through you.</Text>
           <Pressable
-            onPress={() => router.back()}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              router.back();
+            }}
             style={[styles.doneButton, { borderColor: accentColor }]}
           >
             <Text style={[styles.doneButtonText, { color: accentColor }]}>
@@ -104,15 +168,24 @@ export default function BilateralScreen() {
   return (
     <SafeAreaView style={styles.container}>
       {/* Close button */}
-      <Pressable onPress={() => { stopBilateral(); router.back(); }} style={styles.closeButton}>
+      <Pressable
+        onPress={() => {
+          stopBilateral();
+          router.back();
+        }}
+        style={styles.closeButton}
+      >
         <Text style={styles.closeText}>✕</Text>
       </Pressable>
 
-      <View style={styles.content}>
-        <Text style={styles.instruction}>Hold the phone.{'\n'}Let it work.</Text>
+      <Animated.View style={[styles.content, fadeStyle]}>
+        <Animated.Text style={[styles.instruction, textBreathStyle]}>
+          Hold the phone.{'\n'}Let it work.
+        </Animated.Text>
 
-        {/* Two alternating pulse circles */}
+        {/* Two circles with energy arc */}
         <View style={styles.pulseRow}>
+          {/* Left circle */}
           <Animated.View
             style={[
               styles.circle,
@@ -123,6 +196,20 @@ export default function BilateralScreen() {
               leftStyle,
             ]}
           />
+
+          {/* Energy arc / glow trail */}
+          <Animated.View
+            style={[
+              styles.arcTrail,
+              {
+                backgroundColor: accentColor,
+                shadowColor: accentColor,
+              },
+              arcStyle,
+            ]}
+          />
+
+          {/* Right circle */}
           <Animated.View
             style={[
               styles.circle,
@@ -135,17 +222,28 @@ export default function BilateralScreen() {
           />
         </View>
 
-        {/* 60s progress bar */}
-        <View style={styles.progressTrack}>
+        {/* Progress bar with glow */}
+        <Animated.View
+          style={[
+            styles.progressTrack,
+            {
+              shadowColor: accentColor,
+            },
+            progressGlowStyle,
+          ]}
+        >
           <Animated.View
             style={[
               styles.progressFill,
-              { backgroundColor: accentColor },
+              {
+                backgroundColor: accentColor,
+                shadowColor: accentColor,
+              },
               progressStyle,
             ]}
           />
-        </View>
-      </View>
+        </Animated.View>
+      </Animated.View>
     </SafeAreaView>
   );
 }
@@ -197,15 +295,29 @@ const styles = StyleSheet.create({
     shadowRadius: 28,
     elevation: 12,
   },
+  arcTrail: {
+    height: 2,
+    flex: 1,
+    marginHorizontal: -8,
+    borderRadius: 1,
+    shadowOffset: { width: 0, height: 0 },
+    shadowRadius: 12,
+    elevation: 4,
+  },
   progressTrack: {
     width: '100%',
     height: 2,
     backgroundColor: TaruColors.border,
     borderRadius: 1,
+    shadowOffset: { width: 0, height: 0 },
+    shadowRadius: 8,
   },
   progressFill: {
     height: 2,
     borderRadius: 1,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.6,
+    shadowRadius: 6,
   },
   doneContent: {
     flex: 1,
